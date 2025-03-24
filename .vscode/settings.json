@@ -6,5 +6,13 @@
     ],
     "idf.port": "/dev/ttyACM1",
     "idf.toolsPath": "/home/rud/.espressif",
-    "idf.flashType": "JTAG"
+    "idf.flashType": "UART",
+    "files.associations": {
+        "nvs_flash.h": "c",
+        "err.h": "c",
+        "esp_http_server.h": "c",
+        "string.h": "c",
+        "wifi_controller_private.h": "c",
+        "stdio.h": "c"
+    }
 }

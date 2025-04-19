@@ -6,6 +6,8 @@
 
 #include "wifi_controller.h"
 #include "web_server.h"
+#include "driver/gpio.h"
+#include "ssr_controller.h"
 
 
 /* Initialize NVS flash */
@@ -24,6 +26,8 @@ void app_main(void)
 {
     /* Initialize NVS */
     initialize_nvs();
+
+    init_regular_ssr();
     
     /* Start WiFi access point */
     wifi_init_softap();

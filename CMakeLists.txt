@@ -8,6 +8,7 @@ cmake_minimum_required(VERSION 3.16)
 set(EXTRA_COMPONENT_DIRS ${CMAKE_SOURCE_DIR}/main)
 set(EXTRA_COMPONENT_DIRS ${CMAKE_SOURCE_DIR}/components/wifi_controller)
 set(EXTRA_COMPONENT_DIRS ${CMAKE_SOURCE_DIR}/components/web_server)
+set(EXTRA_COMPONENT_DIRS ${CMAKE_SOURCE_DIR}/components/ssr_controller)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(electroman-esp32)

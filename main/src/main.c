@@ -6,6 +6,7 @@
 
 #include "wifi_controller.h"
 #include "web_server.h"
+#include "modbus_pzem.h"
 
 
 /* Initialize NVS flash */
@@ -26,8 +27,11 @@ void app_main(void)
     initialize_nvs();
     
     /* Start WiFi access point */
-    wifi_init_softap();
+    // wifi_init_softap();
     
     /* Start HTTP server */
-    start_webserver();
+    // start_webserver();
+
+    xTaskCreate(pzem_task, "pzem_task", 4096, NULL, 5, NULL);
+
 }

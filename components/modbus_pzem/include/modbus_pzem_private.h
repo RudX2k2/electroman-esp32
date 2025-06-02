@@ -2,8 +2,16 @@
 #define MODBUS_PZEM_PRIVATE_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "modbus_pzem.h"
 
-uint16_t modbus_crc16(const uint8_t *buf, uint8_t len);
+typedef struct
+{
+    bool is_addr_set;
+} PZEM_COMM_t;
+
+
+static void read_from_uart(void *pvParameters);
+
 
 #endif // MODBUS_PZEM_PRIVATE_H

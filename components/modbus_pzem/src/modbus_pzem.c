@@ -5,75 +5,159 @@
 #include "freertos/task.h"
 #include <string.h>
 #include <stdio.h>
+#include "esp_log.h"
 
-#define UART_PORT UART_NUM_2
+static const char *TAG = "PZEM_DRIVERS";
+
+#define UART_PORT UART_NUM_1
 #define TXD_PIN 17
-#define RXD_PIN 16
+#define RXD_PIN 18
 #define BUF_SIZE 256
-#define PZEM_SLAVE_ADDR 0x01
 
-// CRC-16 Modbus
-uint16_t modbus_crc16(const uint8_t *buf, uint8_t len)
+static PZEM_COMM_t PZEM_COMM = {0};
+
+void set_init_address(void)
 {
-    uint16_t crc = 0xFFFF;
-    for (uint8_t i = 0; i < len; i++)
+    // Buffer to get data
+    // uint8_t buff[1024];
+
+    // B4 C0 A8 01 01 00 1E
+    // Command to set adderess
+    uint8_t req_command[7] = {0xB4, 0xC0, 0xA8, 0x01, 0x01, 0x00, 0x1E};
+
+    // Send request
+    int err = uart_write_bytes(UART_PORT, req_command, 5);
+
+    if (err < 0)
     {
-        crc ^= buf[i];
-        for (uint8_t j = 0; j < 8; j++)
-        {
-            if (crc & 0x0001)
-                crc = (crc >> 1) ^ 0xA001;
-            else
-                crc = crc >> 1;
-        }
+        ESP_LOGE(TAG, "Can't request command to read voltage!");
     }
-    return crc;
+    ESP_LOGI(TAG, "Set address");
+
+    // // Read responce with voltage
+    // int len = uart_read_bytes(UART_PORT, buff, 1024, pdMS_TO_TICKS(500));
+
+    // // Must be A4 00 00 00 00 00 A4
+    // if (len == 7)
+    // {
+    //     ESP_LOGI(TAG, "Got data");
+    //     for (uint8_t i = 0; i < len; i++)
+    //     {
+    //         ESP_LOGI(TAG, "%02X ", buff[i]);
+    //     }
+
+    //     PZEM_COMM.is_addr_set = true;
+    //     ESP_LOGD(TAG, "Init address set successfull");
+    //     // (data[0] << 8) + data[1] + (data[2] / 10.0);
+    //     return 1;
+    // }
+    // else
+    // {
+    //     ESP_LOGW(TAG, "No valid responce from request");
+    //     return 0;
+    // }
 }
 
-void pzem_read_registers()
+bool is_address_set(void)
 {
-    uint8_t request[] = {
-        PZEM_SLAVE_ADDR, // Slave address
-        0x04,            // Function code (Read Input Registers)
-        0x00, 0x00,      // Start address (0x0000)
-        0x00, 0x0A       // Number of registers (10)
-    };
+    return PZEM_COMM.is_addr_set;
+}
 
-    uint16_t crc = modbus_crc16(request, 6);
-    request[6] = crc & 0xFF;
-    request[7] = crc >> 8;
+float request_voltage(void)
+{
+    // No address -- then skip
+    // if (is_address_set() == true)
+    // {
 
-    uart_flush(UART_PORT);
-    uart_write_bytes(UART_PORT, (const char *)request, 8);
-    vTaskDelay(pdMS_TO_TICKS(200));
+    // Buffer to get data
+    uint8_t buff[1024];
 
-    uint8_t response[32];
-    int len = uart_read_bytes(UART_PORT, response, sizeof(response), pdMS_TO_TICKS(500));
-    if (len > 0 && len >= 25)
+    // Command to read voltage
+    uint8_t req_command[5] = {0xC0, 0xA8, 0x01, 0x01, 0x00};
+
+    // Send request
+    int err = uart_write_bytes(UART_PORT, req_command, 5);
+
+    if (err < 0)
     {
-        // Парсимо напругу (регістр 0)
-        uint16_t voltage_raw = (response[3] << 8) | response[4];
-        float voltage = voltage_raw / 10.0;
-        printf("Voltage: %.1f V\n", voltage);
-
-        // Струм — регістр 1–2
-        uint32_t current_raw = (response[5] << 8) | response[6];
-        float current = current_raw / 100.0;
-        printf("Current: %.2f A\n", current);
-
-        // Потужність — регістр 3–4
-        uint32_t power_raw = (response[7] << 8) | response[8];
-        float power = power_raw / 10.0;
-        printf("Power: %.1f W\n", power);
+        ESP_LOGE(TAG, "Can't request command to read voltage!");
     }
     else
     {
-        printf("No response or invalid response\n");
+        // ESP_LOGI(TAG, "Request voltage");
+    }
+
+    // // Read responce with voltage
+    // int len = uart_read_bytes(UART_PORT, buff, 1024, pdMS_TO_TICKS(500));
+
+    // if (len >= 3)
+    // {
+    //     ESP_LOGI(TAG, "Got data");
+    //     for (uint8_t i = 0; i < len; i++)
+    //     {
+    //         ESP_LOGI(TAG, "%02X ", buff[i]);
+    //     }
+
+    //     // (data[0] << 8) + data[1] + (data[2] / 10.0);
+    //     return (buff[0] << 8) + buff[1] + (buff[2] / 10.0);
+    // }
+    // else
+    // {
+    //     ESP_LOGW(TAG, "No valid responce from request");
+    //     return 0;
+    // }
+    // // }
+
+    return 0;
+}
+
+void pzem_init(void *pvParameters)
+{
+    esp_err_t err = init_uart_and_start_read();
+
+    if (err == ESP_OK)
+    {
+        ESP_LOGI(TAG, "Initialized UART ok");
+    }
+    else
+    {
+        ESP_LOGE(TAG, "Initialized UART with error %d", err);
+    }
+
+    // vTaskDelay(pdMS_TO_TICKS(2000));
+
+    // set_init_address();
+
+    // Send command to set init address
+    // set_init_address();
+    // if (err == 0)
+    // {
+    //     ESP_LOGE(TAG, "Can't set init address 192.168.1.1");
+    // }
+
+    // float voltage = 0;
+
+    while (1)
+    {
+        //     // pzem_read_registers();
+        //     set_init_address();
+
+        //     vTaskDelay(pdMS_TO_TICKS(1000));
+
+        request_voltage();
+        //     // if (voltage != 0)
+        //     // {
+        //     //     ESP_LOGI(TAG, "Voltage is %f", voltage);
+        //     // }
+
+        vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }
 
-void pzem_task(void *pvParameters)
+esp_err_t init_uart_and_start_read(void)
 {
+    esp_err_t err = 0;
+
     const uart_config_t uart_config = {
         .baud_rate = 9600,
         .data_bits = UART_DATA_8_BITS,
@@ -81,13 +165,43 @@ void pzem_task(void *pvParameters)
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE};
 
-    uart_driver_install(UART_PORT, BUF_SIZE, 0, 0, NULL, 0);
-    uart_param_config(UART_PORT, &uart_config);
-    uart_set_pin(UART_PORT, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    err = uart_driver_install(UART_PORT, BUF_SIZE, 0, 0, NULL, 0);
+    err = uart_param_config(UART_PORT, &uart_config);
+    err = uart_set_pin(UART_PORT, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
 
+    xTaskCreate(read_from_uart, "uart_read", 4096, NULL, 5, NULL);
+
+    return err;
+}
+
+static void read_from_uart(void *pvParameters)
+{
     while (1)
     {
-        pzem_read_registers();
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        size_t available = 0;
+        uart_get_buffered_data_len(UART_PORT, &available);
+
+        if (available > 0)
+        {
+            ESP_LOGI(TAG, "Data available");
+            uint8_t buff[256];
+
+            int len = uart_read_bytes(UART_PORT, buff, 256, pdMS_TO_TICKS(10));
+
+            if (len > 0)
+            {
+                ESP_LOGI(TAG, "Got data");
+                for (uint8_t i = 0; i < len; i++)
+                {
+                    ESP_LOGI(TAG, "[%d]%02X ", i, buff[i]);
+                    vTaskDelay(pdMS_TO_TICKS(1));
+                }
+            }
+            else
+            {
+                ESP_LOGI(TAG, "No data");
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }

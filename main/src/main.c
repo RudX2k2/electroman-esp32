@@ -32,6 +32,6 @@ void app_main(void)
     /* Start HTTP server */
     // start_webserver();
 
-    xTaskCreate(pzem_task, "pzem_task", 4096, NULL, 5, NULL);
+    xTaskCreate(pzem_init, "pzem_init", 4096, NULL, 5, NULL);
 
 }

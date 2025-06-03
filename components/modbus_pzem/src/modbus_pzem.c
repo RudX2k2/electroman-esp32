@@ -16,6 +16,8 @@ static const char *TAG = "PZEM_DRIVERS";
 
 static PZEM_COMM_t PZEM_COMM = {0};
 
+uint8_t req_voltage_command[8] = {0xF8, 0x04, 0x00, 0x00, 0x00, 0x0A, 0x64, 0x64};
+
 void set_init_address(void)
 {
     // Buffer to get data
@@ -70,13 +72,23 @@ float request_voltage(void)
     // {
 
     // Buffer to get data
-    uint8_t buff[1024];
+    // uint8_t buff[1024];
 
     // Command to read voltage
-    uint8_t req_command[5] = {0xC0, 0xA8, 0x01, 0x01, 0x00};
+    // uint8_t req_command[5] = {0xC0, 0xA8, 0x01, 0x01, 0x00};
+    
+
 
     // Send request
-    int err = uart_write_bytes(UART_PORT, req_command, 5);
+    int err = uart_write_bytes(UART_PORT, req_voltage_command, 8);
+
+    ESP_LOGI(TAG, "Wrote %d bytes", err);
+    for (int i = 0; i < sizeof(req_voltage_command); i++)
+    {
+        ESP_LOGI(TAG, "%02X", req_voltage_command[i]);
+        vTaskDelay(pdMS_TO_TICKS(5));
+    }
+    
 
     if (err < 0)
     {

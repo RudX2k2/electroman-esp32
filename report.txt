@@ -1,0 +1,4 @@
+Plotted to '/home/rud/electroman-esp32/schematics/setup.pdf'.
+
+Info: Done.
+Info: Done.

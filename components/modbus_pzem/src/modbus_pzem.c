@@ -205,7 +205,7 @@ static void read_from_uart(void *pvParameters)
                 ESP_LOGI(TAG, "Got data");
                 for (uint8_t i = 0; i < len; i++)
                 {
-                    ESP_LOGI(TAG, "[%d]%02X ", i, buff[i]);
+                    ESP_LOGW(TAG, "[%d]%02X ", i, buff[i]);
                     vTaskDelay(pdMS_TO_TICKS(1));
                 }
             }

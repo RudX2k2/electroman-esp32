@@ -136,32 +136,9 @@ void pzem_init(void *pvParameters)
         ESP_LOGE(TAG, "Initialized UART with error %d", err);
     }
 
-    // vTaskDelay(pdMS_TO_TICKS(2000));
-
-    // set_init_address();
-
-    // Send command to set init address
-    // set_init_address();
-    // if (err == 0)
-    // {
-    //     ESP_LOGE(TAG, "Can't set init address 192.168.1.1");
-    // }
-
-    // float voltage = 0;
-
     while (1)
     {
-        //     // pzem_read_registers();
-        //     set_init_address();
-
-        //     vTaskDelay(pdMS_TO_TICKS(1000));
-
         request_voltage();
-        //     // if (voltage != 0)
-        //     // {
-        //     //     ESP_LOGI(TAG, "Voltage is %f", voltage);
-        //     // }
-
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }
